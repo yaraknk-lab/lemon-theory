@@ -27,6 +27,7 @@ const s = {
   articleRowTitle: { fontFamily: 'var(--serif)', fontSize: '18px' },
   articleRowMeta: { fontSize: '12px', color: 'var(--text-faint)' },
   msg: { padding: '0.75rem 1rem', background: 'var(--accent)', fontSize: '13px', marginBottom: '1.5rem' },
+  error: { padding: '0.75rem 1rem', background: '#fee', fontSize: '13px', marginBottom: '1.5rem', color: '#c33' },
 }
 
 const TABS = ['Add Article', 'Manage Articles', 'Edit About']
@@ -35,7 +36,8 @@ export default function Admin() {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const [tab, setTab] = useState('Add Article')
   const [articles, setArticles] = useState([])
   const [brand, setBrand] = useState(null)
@@ -62,9 +64,10 @@ export default function Admin() {
     supabase.from('articles').select('*').order('published_date', { ascending: false }).then(({ data }) => setArticles(data || []))
   }
 
-  const sendMagicLink = async () => {
-    const { error } = await supabase.auth.signInWithOtp({ email })
-    if (!error) setSent(true)
+  const signIn = async () => {
+    setError('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setError('Incorrect email or password.')
   }
 
   const signOut = () => supabase.auth.signOut()
@@ -111,15 +114,11 @@ export default function Admin() {
     <div style={s.page}>
       <div style={s.loginWrap}>
         <div style={s.loginTitle}>Admin Login</div>
-        <div style={s.loginSub}>Enter your email to receive a magic login link.</div>
-        {sent ? (
-          <div style={s.msg}>Check your email for a login link.</div>
-        ) : (
-          <>
-            <input style={s.input} type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMagicLink()} />
-            <button style={s.btn} onClick={sendMagicLink}>Send magic link</button>
-          </>
-        )}
+        <div style={s.loginSub}>Sign in to manage The Lemon Theory.</div>
+        {error && <div style={s.error}>{error}</div>}
+        <input style={s.input} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input style={s.input} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && signIn()} />
+        <button style={s.btn} onClick={signIn}>Sign in</button>
       </div>
     </div>
   )
